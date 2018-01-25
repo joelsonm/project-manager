@@ -1,0 +1,20 @@
+{
+  "name": "project-manager",
+  "version": "1.0.0",
+  "description": "Gerenciador de Projeto",
+  "main": "index.js",
+  "bin": {
+    "proj": "./bin/index.js"
+  },
+  "author": "Joelson Magalhães <joelsonm@live.com>",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "commander": "^2.9.0",
+    "git-cli": "^0.10.0",
+    "inquirer": "^5.0.1",
+    "lodash": "^4.17.4",
+    "node-storage": "0.0.7",
+    "sync-exec": "^0.6.2"
+  }
+}
