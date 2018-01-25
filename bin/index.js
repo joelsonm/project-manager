@@ -37,9 +37,9 @@ program.command('upgrade').alias('u').description('Atualiza projeto').action(() 
                 var tag = _.split(t, /\t/g);
 
                 if (tag.length == 2) {
-                    return _.split(tag[1], '/')[2];
+                    return {name: _.split(tag[1], '/')[2]};
                 }
-                return tag[0];
+                return {name: tag[0]};
             });
             projects.push({name: p.name, tags: tags, remote: p.remote, directory: p.directory});
         }
@@ -58,15 +58,24 @@ program.command('upgrade').alias('u').description('Atualiza projeto').action(() 
         var proj = _.find(projects, p => {
             return p.name == question.name
         });
+        proj.tags = _.orderBy(proj.tags, 'name', 'desc');
         inquirer.prompt([
             {
                 message: "Selecione a versão:",
                 type: "list",
                 name: "tag",
-                choices: _.sortBy(proj.tags, false)
+                choices: _.map(proj.tags, (t, index) => {
+                    var current_version = exec('cd '+proj.directory+' && type .version');
+                    var disabled = true;
+                    var tag = t.name +' '+colors.yellow('(Versão Atual)');
+                    if (current_version.status == 0 && _.replace(current_version.stdout,' \r\n','') != t.name || current_version.status != 0) {
+                        disabled = false;
+                        tag = index == 0 ? t.name +' '+colors.green('(Versão recente)') : t.name;
+                    }
+                    return {name: tag, value: t.name,disabled: disabled};
+                })
             }
         ]).then(tagselect => {
-
             var tmp_folder = __dirname+'/../tmp/'+proj.name;
             var clean_folder = exec('rm -rf '+tmp_folder);
             if (clean_folder.status != 0) {
@@ -89,7 +98,6 @@ program.command('upgrade').alias('u').description('Atualiza projeto').action(() 
             }
             var version_file = exec('cd '+ proj.directory +' && touch .version && echo '+tagselect.tag+' > .version');
             console.log(colors.green('\nProjeto '+colors.bold(proj.name)+' atualizado para '+tagselect.tag));
-            spinner.stop();
         })
     });
 });
