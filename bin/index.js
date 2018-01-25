@@ -3,23 +3,28 @@ const _ = require('lodash');
 const exec = require('sync-exec');
 const program = require('commander');
 const inquirer = require('inquirer');
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 const colors = require('colors');
-const Table = require('cli-table');
 const Storage = require('node-storage');
-const download = require('download-file');
 const commands = require('./commands.js');
+const emptyDir = require('empty-dir');
 
 var store = new Storage(__dirname+'/../config/.schema');
 
 program.description('Gerenciador de projetos');
-program.command('list').description('Lista de projetos').action(() => {
+program.command('list').alias('l').description('Lista de projetos').action(() => {
+    if(store.get('projects') == undefined){
+        console.log();
+        console.log(colors.yellow('Nenhum projeto definido'));
+        process.exit(0);
+    }
     _.each(store.get('projects'), p => {
-        console.log(colors.green(p.name)+'\t\t'+colors.yellow(p.directory));
+        console.log('\nProjeto\t\t\tDiretório');
+        console.log(colors.green(p.name)+'\t\t\t'+colors.yellow(p.directory));
     });
 });
-program.command('upgrade').description('Atualiza projeto').action(() => {
+program.command('upgrade').alias('u').description('Atualiza projeto').action(() => {
     var projects = [];
     _.each(store.get('projects'), (p) => {
         var dir = __dirname+'/../repo/'+p.name;
@@ -61,6 +66,7 @@ program.command('upgrade').description('Atualiza projeto').action(() => {
                 choices: _.sortBy(proj.tags, false)
             }
         ]).then(tagselect => {
+
             var tmp_folder = __dirname+'/../tmp/'+proj.name;
             var clean_folder = exec('rm -rf '+tmp_folder);
             if (clean_folder.status != 0) {
@@ -71,7 +77,6 @@ program.command('upgrade').description('Atualiza projeto').action(() => {
             if (download.status == 0) {
                 var limp = exec('rm -rf '+tmp_folder+'/.git');
             }
-            // var clean_folder_project = exec('rm -rf '+ proj.directory +'/{,.[!.],..?}*');
             var clean_folder_project = commands.clean_project(proj.directory);
             if (clean_folder_project.status != 0) {
                 console.log(colors.white.bgRed('Erro: ')+clean_folder_project.stderr);
@@ -83,11 +88,37 @@ program.command('upgrade').description('Atualiza projeto').action(() => {
                 process.exit(0);
             }
             var version_file = exec('cd '+ proj.directory +' && touch .version && echo '+tagselect.tag+' > .version');
-            console.log(colors.green('Projeto '+proj.name+' atualizado para '+tagselect.tag));
+            console.log(colors.green('\nProjeto '+colors.bold(proj.name)+' atualizado para '+tagselect.tag));
+            spinner.stop();
         })
     });
 });
-program.command('define <name> <remote>').description('Define de projetos').action(function(name, remote){
+program.command('remote <name> <remote>').alias('r').description('Define remote para projeto').action(function(name, remote){
+    var proj = _.find(store.get('projects'), (p) => {
+        return p.name == name
+    });
+
+    if (proj == undefined) {
+        console.log();
+        console.log(colors.bgRed.white('ERRO') + colors.white(' Projeto não definido'));
+        process.exit(0);
+    }
+
+    var projects = store.get('projects');
+
+    _.each(projects, p => {
+        if (p.name == name) {
+            p.remote = remote
+        }
+    });
+
+    store.put('projects', projects);
+
+    console.log();
+    console.log(colors.green('Remote para o projeto '+colors.white.bgGreen(name)+' definido'));
+
+});
+program.command('define <name> <remote>').alias('d').description('Define de projetos').action(function(name, remote){
     var project = store.get('projects');
 
     if(project == undefined){
@@ -101,6 +132,12 @@ program.command('define <name> <remote>').description('Define de projetos').acti
     if (exist != undefined) {
         console.log();
         console.log(colors.bgRed.white('ERRO') + colors.white(' Projeto já definido'));
+        process.exit(0);
+    }
+
+    if(!emptyDir.sync(process.cwd())){
+        console.log();
+        console.log(colors.bgRed.white('ERRO') + colors.white(' Diretório não está vazio'));
         process.exit(0);
     }
 

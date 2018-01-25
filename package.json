@@ -1,6 +1,6 @@
 {
-  "name": "project-manager",
-  "version": "1.0.0",
+  "name": "proj-manager",
+  "version": "1.0.2",
   "description": "Gerenciador de Projeto",
   "main": "index.js",
   "bin": {
@@ -8,9 +8,14 @@
   },
   "author": "Joelson Magalhães <joelsonm@live.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joelsonm/project-manager.git"
+  },
   "dependencies": {
     "colors": "^1.1.2",
     "commander": "^2.9.0",
+    "empty-dir": "^0.2.1",
     "git-cli": "^0.10.0",
     "inquirer": "^5.0.1",
     "lodash": "^4.17.4",
