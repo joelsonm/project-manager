@@ -1,4 +1,3 @@
-#! /usr/bin/env node
 const _ = require('lodash');
 const exec = require('sync-exec');
 const program = require('commander');
